@@ -13,9 +13,9 @@ const supabase = createClient(supabaseUrl, supabaseKey)
 const app = express()
 
 
-// Middleware Logging
+// Middleware
 app.use(morgan('short'))
-
+app.use(express.json())
 
 
 app.use('/tasks', taskRouter)
