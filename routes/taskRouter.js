@@ -13,7 +13,7 @@ const taskRouter = express.Router();
 
 
 // Get all tasks
-taskRouter.get('/all-info', async (req, res, next) => {
+taskRouter.get('/', async (req, res, next) => {
     const { data: tasks, error } = await supabase.from('tasks').select('*')
 
     if (error) {
@@ -23,7 +23,25 @@ taskRouter.get('/all-info', async (req, res, next) => {
     }
 })
 
+// Get a specific task
+taskRouter.get('/:id', async (req, res, next) => {
+    const idToGet = req.params.id
 
+    const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('id', idToGet)
+
+    if (error) {
+        res.status(500).json({ error: 'Could not find the task.' })
+    } else if (!data || data.length === 0) {
+        res.status(400).json({ error: 'Could not find a task with that id.' })
+    } else {
+        res.status(200).json(data)
+    }
+})
+
+// Add a new task
 taskRouter.post('/', async (req, res, next) => {
     const insertData = req.body
 
@@ -49,7 +67,7 @@ taskRouter.post('/', async (req, res, next) => {
     }
 })
 
-
+// Update an existing task
 taskRouter.put('/:id', async (req, res, next) => {
     const idToUpdate = req.params.id
     const dataToUpdate = req.body
@@ -57,23 +75,38 @@ taskRouter.put('/:id', async (req, res, next) => {
     console.log(dataToUpdate)
 
     if (dataToUpdate === undefined) {
-        res.status(400).json({error: 'You need to add a category and what to change in order to update.'})
+        res.status(400).json({ error: 'You need to add a category and what to change in order to update.' })
     } else {
-        const {data, error} = await supabase
-        .from('tasks')
-        .update(dataToUpdate)
-        .eq('id', idToUpdate)
-        .select()
+        const { data, error } = await supabase
+            .from('tasks')
+            .update(dataToUpdate)
+            .eq('id', idToUpdate)
+            .select()
 
         if (error) {
             console.log(error)
             res.status(500).json({ error: 'Failed to update task.' })
         } else {
-            res.status(200).json({data})
+            res.status(200).json({ data })
         }
     }
 })
 
+// Delete a task from database
+taskRouter.delete('/:id', async (req, res, next) => {
+    const idToDelete = req.params.id
+
+    const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', idToDelete)
+
+    if (error) {
+        res.status(500).json({ error: `Could not delete the row with id#${idToDelete}` })
+    } else {
+        res.sendStatus(204)
+    }
+})
 
 
 module.exports = taskRouter;
