@@ -1,6 +1,7 @@
 const express = require('express')
 const { createClient } = require('@supabase/supabase-js')
 
+
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_ANON_KEY
 const serviceKey = process.env.SUPABASE_SERVICE_KEY
@@ -41,9 +42,34 @@ taskRouter.post('/', async (req, res, next) => {
 
         if (error) {
             console.log(error)
-            res.status(500).json({ error: 'Failed to insert new data into tasks ' })
+            res.status(500).json({ error: 'Failed to insert new data into tasks.' })
         } else {
             res.status(201).json(data)
+        }
+    }
+})
+
+
+taskRouter.put('/:id', async (req, res, next) => {
+    const idToUpdate = req.params.id
+    const dataToUpdate = req.body
+
+    console.log(dataToUpdate)
+
+    if (dataToUpdate === undefined) {
+        res.status(400).json({error: 'You need to add a category and what to change in order to update.'})
+    } else {
+        const {data, error} = await supabase
+        .from('tasks')
+        .update(dataToUpdate)
+        .eq('id', idToUpdate)
+        .select()
+
+        if (error) {
+            console.log(error)
+            res.status(500).json({ error: 'Failed to update task.' })
+        } else {
+            res.status(200).json({data})
         }
     }
 })
