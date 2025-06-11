@@ -3,8 +3,9 @@ const { createClient } = require('@supabase/supabase-js')
 
 const supabaseUrl = process.env.SUPABASE_URL
 const supabaseKey = process.env.SUPABASE_ANON_KEY
+const serviceKey = process.env.SUPABASE_SERVICE_KEY
 
-const supabase = createClient(supabaseUrl, supabaseKey)
+const supabase = createClient(supabaseUrl, serviceKey)
 
 
 const taskRouter = express.Router();
@@ -13,11 +14,37 @@ const taskRouter = express.Router();
 // Get all tasks
 taskRouter.get('/all-info', async (req, res, next) => {
     const { data: tasks, error } = await supabase.from('tasks').select('*')
-    
+
     if (error) {
-        res.status(500).json({error: 'Failed to fetch tasks'})
+        res.status(500).json({ error: 'Failed to fetch tasks' })
     } else {
-        res.status(200).json({data: tasks})
+        res.status(200).json({ data: tasks })
+    }
+})
+
+
+taskRouter.post('/', async (req, res, next) => {
+    const insertData = req.body
+
+    if (insertData === undefined || insertData.title === undefined || insertData.completed === undefined || insertData.dueDate === undefined) {
+        res.status(400).json({ error: 'You need to add a title, a completed, and a due date.' })
+    } else {
+        const { data, error } = await supabase
+            .from('tasks')
+            .insert([
+                {
+                    title: insertData.title,
+                    completed: insertData.completed,
+                    dueDate: insertData.dueDate
+                }
+            ]).select()
+
+        if (error) {
+            console.log(error)
+            res.status(500).json({ error: 'Failed to insert new data into tasks ' })
+        } else {
+            res.status(201).json(data)
+        }
     }
 })
 
