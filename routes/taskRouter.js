@@ -14,13 +14,38 @@ const taskRouter = express.Router();
 
 // Get all tasks
 taskRouter.get('/', async (req, res, next) => {
-    const { data: tasks, error } = await supabase.from('tasks').select('*')
+    const [filterKey] = Object.keys(req.query)
+    const filterValue = req.query[filterKey]
 
-    if (error) {
-        res.status(500).json({ error: 'Failed to fetch tasks' })
+    // When filter and value are undefined
+    if (!filterKey && !filterValue) {
+        try {
+            const { data } = await supabase
+                .from('tasks')
+                .select('*')
+
+            res.status(200).json(data)
+        } catch (error) {
+            res.status(500).json({ error: 'Failed to fetch tasks' })
+        }
     } else {
-        res.status(200).json({ data: tasks })
+        // Checking if both filterKey and filterValue hold information
+        if (filterKey && filterValue) {
+            try {
+                const { data } = await supabase
+                    .from('tasks')
+                    .select('*')
+                    .eq(filterKey, filterValue)
+
+                res.status(200).json(data)
+            } catch (error) {
+                res.status(500).json({ error: `Failed to fetch task with the filter ${filterKey} with the value of ${filterValue} ` })
+            }
+        } else {
+            res.status(400).json({ error: 'You need to add both a filter and a value.' })
+        }
     }
+
 })
 
 // Get a specific task
