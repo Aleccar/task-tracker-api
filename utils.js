@@ -1,8 +1,9 @@
-const getIndexById = (id, elementList) => {
-    return elementList.findIndex((element) => {
-        return element.id === id
-    });
-};
+const invalidInput = (task) => {
+    if (task === undefined || task.title === undefined || task.completed === undefined || task.dueDate === undefined) {
+        return true 
+    }
+    return false
+}
 
 
-module.exports = { getIndexById };
+module.exports = { invalidInput };
