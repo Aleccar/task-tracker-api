@@ -1,12 +1,12 @@
 const express = require('express')
-const { createClient } = require('@supabase/supabase-js')
-
-
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseKey = process.env.SUPABASE_ANON_KEY
-const serviceKey = process.env.SUPABASE_SERVICE_KEY
-
-const supabase = createClient(supabaseUrl, serviceKey)
+const {
+    getAllTasks,
+    getTaskByID,
+    insertTask,
+    updateTask,
+    deleteTask
+} = require('../models/taskModel.js')
+const { invalidInput } = require('../utils.js')
 
 
 const taskRouter = express.Router();
@@ -17,49 +17,31 @@ taskRouter.get('/', async (req, res, next) => {
     const [filterKey] = Object.keys(req.query)
     const filterValue = req.query[filterKey]
 
-    // When filter and value are undefined
-    if (!filterKey && !filterValue) {
-        try {
-            const { data } = await supabase
-                .from('tasks')
-                .select('*')
-
-            res.status(200).json(data)
-        } catch (error) {
-            res.status(500).json({ error: 'An error occurred while retrieving tasks. Please try again later.' })
-        }
-    } else {
-        // Checking if both filterKey and filterValue hold information
-        if (filterKey && filterValue) {
-            try {
-                const { data } = await supabase
-                    .from('tasks')
-                    .select('*')
-                    .eq(filterKey, filterValue)
-
-                res.status(200).json(data)
-            } catch (error) {
-                res.status(500).json({ error: `Unable to retrieve tasks using filter "${filterKey}" and value "${filterValue}".` })
-            }
+    try {
+        const { data, error } = await getAllTasks(filterKey, filterValue)
+        if (error) {
+            throw error
         } else {
-            res.status(400).json({ error: 'You need to add both a filter and a value.' })
+            res.status(200).json(data)
         }
+    } catch (error) {
+        res.status(500).json({ error: 'An error occurred while retrieving tasks. Please try again later.' })
     }
-
-})
+}
+)
 
 // Get a specific task
 taskRouter.get('/:id', async (req, res, next) => {
-    const idToGet = req.params.id
+    const id = req.params.id
 
     try {
-        const {data} = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('id', idToGet)
+        const { data, error } = await getTaskByID(id)
 
-        if (!data || data.length === 0) {
-            res.status(400).json({ error: `No task found with ID: ${idToGet}` })
+        if (error) {
+            throw error
+        }
+        else if (!data || data.length === 0) {
+            res.status(400).json({ error: `No task found with ID: ${id}` })
         } else {
             res.status(200).json(data)
         }
@@ -70,70 +52,61 @@ taskRouter.get('/:id', async (req, res, next) => {
 
 // Add a new task
 taskRouter.post('/', async (req, res, next) => {
-    const insertData = req.body
+    const task = req.body
 
-    if (insertData === undefined || insertData.title === undefined || insertData.completed === undefined || insertData.dueDate === undefined) {
+    if (invalidInput(task)) {
         res.status(400).json({ error: 'Missing required fields: title, completed, and dueDate are all required.' })
-    } else {
+    }
 
-        try {
-            const { data } = await supabase
-            .from('tasks')
-            .insert([
-                {
-                    title: insertData.title,
-                    completed: insertData.completed,
-                    dueDate: insertData.dueDate
-                }
-            ]).select()
-
+    try {
+        const { data, error } = await insertTask(task)
+        if (error) {
+            throw error
+        } else {
             res.status(201).json(data)
-        } catch (error) {
-            res.status(500).json({ error: 'Failed to create new task. Please try again later.' })
         }
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to create new task. Please try again later.' })
     }
 })
 
 // Update an existing task
 taskRouter.put('/:id', async (req, res, next) => {
-    const idToUpdate = req.params.id
-    const dataToUpdate = req.body
+    const id = req.params.id
+    const task = req.body
 
-    if (dataToUpdate === undefined) {
+    if (task === undefined) {
         res.status(400).json({ error: 'Please provide task fields to update.' })
-    } else {
-        try {
-            const { data } = await supabase
-            .from('tasks')
-            .update(dataToUpdate)
-            .eq('id', idToUpdate)
-            .select()
-
-            res.status(200).json({ data })
-        } catch (error) {
-            res.status(500).json({ error: `Could not update task with ID: ${idToUpdate}` })
-        }
     }
+    try {
+        const { data, error } = await updateTask(id, task)
+        if (error) {
+            throw error
+        } else {
+            res.status(200).json({ data })
+        }
+    } catch (error) {
+        res.status(500).json({ error: `Could not update task with ID: ${id}` })
+    }
+
 })
 
 // Delete a task from database
 taskRouter.delete('/:id', async (req, res, next) => {
-    const idToDelete = req.params.id
+    const id = req.params.id
 
     try {
-        const { data } = await supabase
-        .from('tasks')
-        .delete()
-        .eq('id', idToDelete)
-        .select()
-
-        if (data.length === 0) {
-            res.status(404).json({error: `No task with the ID: ${idToDelete} exists.`})
+        const { data, error } = await deleteTask(id)
+        if (error) {
+            throw error
+        }
+        else if (!data || data.length === 0) {
+            res.status(404).json({ error: `No task with the ID: ${id} exists.` })
         } else {
             res.sendStatus(204)
         }
     } catch (error) {
-        res.status(500).json({ error: `Failed to delete task with ID: ${idToDelete}` })
+        res.status(500).json({ error: `Failed to delete task with ID: ${id}` })
     }
 })
 
