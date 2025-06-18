@@ -7,13 +7,14 @@ const {
     deleteTask
 } = require('../models/taskModel.js')
 const { invalidInput } = require('../utils.js')
+const { authenticate } = require('../middleware/authMiddleware.js')
 
 
 const taskRouter = express.Router();
 
 
 // Get all tasks
-taskRouter.get('/', async (req, res, next) => {
+taskRouter.get('/', authenticate ,async (req, res, next) => {
     const [filterKey] = Object.keys(req.query)
     const filterValue = req.query[filterKey]
 
@@ -31,7 +32,7 @@ taskRouter.get('/', async (req, res, next) => {
 )
 
 // Get a specific task
-taskRouter.get('/:id', async (req, res, next) => {
+taskRouter.get('/:id', authenticate, async (req, res, next) => {
     const id = req.params.id
 
     try {
@@ -51,7 +52,7 @@ taskRouter.get('/:id', async (req, res, next) => {
 })
 
 // Add a new task
-taskRouter.post('/', async (req, res, next) => {
+taskRouter.post('/', authenticate, async (req, res, next) => {
     const task = req.body
 
     if (invalidInput(task)) {
@@ -71,7 +72,7 @@ taskRouter.post('/', async (req, res, next) => {
 })
 
 // Update an existing task
-taskRouter.put('/:id', async (req, res, next) => {
+taskRouter.put('/:id', authenticate, async (req, res, next) => {
     const id = req.params.id
     const task = req.body
 
@@ -92,7 +93,7 @@ taskRouter.put('/:id', async (req, res, next) => {
 })
 
 // Delete a task from database
-taskRouter.delete('/:id', async (req, res, next) => {
+taskRouter.delete('/:id', authenticate, async (req, res, next) => {
     const id = req.params.id
 
     try {
