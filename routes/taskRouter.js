@@ -18,8 +18,10 @@ taskRouter.get('/', authenticate ,async (req, res, next) => {
     const [filterKey] = Object.keys(req.query)
     const filterValue = req.query[filterKey]
 
+    const userId = req.user.userId
+
     try {
-        const { data, error } = await getAllTasks(filterKey, filterValue)
+        const { data, error } = await getAllTasks(filterKey, filterValue, userId)
         if (error) {
             throw error
         } else {
@@ -34,9 +36,10 @@ taskRouter.get('/', authenticate ,async (req, res, next) => {
 // Get a specific task
 taskRouter.get('/:id', authenticate, async (req, res, next) => {
     const id = req.params.id
+    const userId = req.user.userId
 
     try {
-        const { data, error } = await getTaskByID(id)
+        const { data, error } = await getTaskByID(id, userId)
 
         if (error) {
             throw error
@@ -54,13 +57,14 @@ taskRouter.get('/:id', authenticate, async (req, res, next) => {
 // Add a new task
 taskRouter.post('/', authenticate, async (req, res, next) => {
     const task = req.body
+    const userId = req.user.userId
 
     if (invalidInput(task)) {
         res.status(400).json({ error: 'Missing required fields: title, completed, and dueDate are all required.' })
     }
 
     try {
-        const { data, error } = await insertTask(task)
+        const { data, error } = await insertTask(task, userId)
         if (error) {
             throw error
         } else {
@@ -75,12 +79,13 @@ taskRouter.post('/', authenticate, async (req, res, next) => {
 taskRouter.put('/:id', authenticate, async (req, res, next) => {
     const id = req.params.id
     const task = req.body
+    const userId = req.user.userId
 
     if (task === undefined) {
         res.status(400).json({ error: 'Please provide task fields to update.' })
     }
     try {
-        const { data, error } = await updateTask(id, task)
+        const { data, error } = await updateTask(id, task, userId)
         if (error) {
             throw error
         } else {
@@ -95,9 +100,10 @@ taskRouter.put('/:id', authenticate, async (req, res, next) => {
 // Delete a task from database
 taskRouter.delete('/:id', authenticate, async (req, res, next) => {
     const id = req.params.id
+    const userId = req.user.userId
 
     try {
-        const { data, error } = await deleteTask(id)
+        const { data, error } = await deleteTask(id, userId)
         if (error) {
             throw error
         }
