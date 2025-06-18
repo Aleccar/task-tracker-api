@@ -1,15 +1,10 @@
 const express = require('express')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-
-
-// TODO: Move these to models/userModel later
-const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY)
+const { registerUser, loginUser } = require('../models/userModel');
 
 
 const userRouter = express.Router();
-
 
 
 userRouter.post('/register', async (req, res, next) => {
@@ -22,9 +17,7 @@ userRouter.post('/register', async (req, res, next) => {
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10)
-        const { data, error } = await supabase
-            .from('users')
-            .insert([{ email, password: hashedPassword }])
+        const { data, error } = await registerUser(email, hashedPassword)
 
         if (error) {
             throw error
@@ -37,6 +30,7 @@ userRouter.post('/register', async (req, res, next) => {
 })
 
 
+
 userRouter.post('/login', async (req, res, next) => {
     const { email, password } = req.body
 
@@ -46,16 +40,13 @@ userRouter.post('/login', async (req, res, next) => {
 
     try {
         // Fetch users to validate input data:
-        const { data: users, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
+        const { data: userData, error } = await loginUser(email)
 
-        if (error || users.length === 0) {
+        if (error || userData.length === 0) {
             return res.status(400).json({ error: 'invalid credentials' })
         }
 
-        const user = users[0]
+        const user = userData[0]
 
         // Compare password to user input:
         const matchingPass = await bcrypt.compare(password, user.password)
